@@ -42,7 +42,11 @@
                   <a-doption @click="adjustDepart(nodeData)"
                     >调整上下级关系</a-doption
                   >
-                  <a-doption @click="handle(nodeData)">删除部门</a-doption>
+                  <a-doption
+                    style="color: red"
+                    @click="handleDepartDelete(nodeData)"
+                    >删除部门</a-doption
+                  >
                 </template>
               </a-dropdown>
             </template>
@@ -70,8 +74,7 @@
             </span>
           </div>
           <div class="container-right-content">
-            <!-- <a-table :columns="columns" :data="tableData" /> -->
-            <UserList />
+            <UserList :current-depart="currentDepart" />
           </div>
         </div>
       </template>
@@ -83,20 +86,15 @@
   import { computed, h, reactive, ref, onMounted } from 'vue';
   import { Depart } from '@/type/depart';
   import UserList from './components/user-list.vue';
-  import {
-    Modal,
-    Form,
-    Input,
-    Message,
-    Textarea,
-    TreeSelect,
-  } from '@arco-design/web-vue';
+  import { Modal, Form, Input, Message, Textarea } from '@arco-design/web-vue';
   import { rootDepartKey } from '@/constant';
+  import useModelFrom from '@/utils/form';
   import {
     addDepartByType,
-    getDepartTree,
+    getDepartTreeById,
     updateDepart,
-    adjustDepartParent,
+    adjustDepartment,
+    deleteDepart,
   } from '@/api/depart';
 
   const size = ref(280);
@@ -121,7 +119,7 @@
   });
   // 获取部门树
   const fetchTree = async () => {
-    const res = await getDepartTree();
+    const res = await getDepartTreeById();
     departList.value = res.data;
   };
   // 选中当前树节点
@@ -220,10 +218,6 @@
         formInstance.value?.resetFields();
       },
     });
-  };
-
-  const handle = (nodeData: Depart) => {
-    console.log(nodeData);
   };
 
   const submitAdd = async (data: any) => {
@@ -350,86 +344,65 @@
   };
   // 调整上下级关系
   const adjustDepart = (nodeData: Depart) => {
-    const formData = reactive({
-      currentName: nodeData.name,
-      parentId: '',
-    });
-
-    const formInstance = ref<typeof Form | null>(null);
-
-    Modal.open({
+    const { id: childId, name } = nodeData;
+    return useModelFrom({
       title: '调整上下级关系',
-      content: () =>
-        h('div', [
-          h(
-            Form,
-            {
-              model: formData,
-              ref: formInstance,
-              labelColProps: { span: 6 },
-              wrapperColProps: { span: 18 },
+      modelValue: {
+        childId,
+        name,
+        parentId: '',
+      },
+      fields: [
+        {
+          label: '当前部门',
+          prop: 'name',
+          fieldCopmProps: {
+            readonly: true,
+          },
+        },
+        {
+          label: '变更到',
+          prop: 'parentId',
+          type: 'treeSelect',
+          fieldCopmProps: {
+            data: treeData,
+            fieldNames: {
+              children: 'children',
+              key: 'id',
+              title: 'name',
             },
-            {
-              default: () => [
-                h(
-                  Form.Item,
-                  { label: '当前部门' },
-                  {
-                    default: () =>
-                      h(Input, {
-                        disabled: true,
-                        modelValue: formData.currentName,
-                      }),
-                  }
-                ),
-                h(
-                  Form.Item,
-                  {
-                    label: '变更上级部门',
-                    field: 'parentId',
-                    rules: [{ required: true, message: '请选择上级部门' }],
-                  },
-                  {
-                    default: () => [
-                      h(TreeSelect, {
-                        'placeholder': '请选择上级部门',
-                        'modelValue': formData.parentId,
-                        'onUpdate:modelValue': (value: string) => {
-                          formData.parentId = value;
-                        },
-                        'treeData': treeData.value,
-                        'fieldNames': {
-                          children: 'children',
-                          key: 'id',
-                          title: 'name',
-                        },
-                      }),
-                    ],
-                  }
-                ),
-              ],
-            }
-          ),
-        ]),
-      onBeforeOk: async () => {
+          },
+          rules: [{ required: true, message: '变更部门不能为空' }],
+        },
+      ],
+      onBeforeValidateOk: async (done, modelValue) => {
         try {
-          const result = await formInstance.value?.validate();
-          if (!result) {
-            await adjustDepartParent({
-              departId: nodeData.id || '',
-              parentId: formData.parentId,
-            });
-            Message.success('调整成功');
-            fetchTree();
-            return true;
-          }
-          return false;
+          await adjustDepartment({
+            departId: modelValue.childId,
+            parentId: modelValue.parentId,
+          });
+          fetchTree();
+          Message.success('调整成功');
+          done(true);
         } catch (error) {
-          return false;
+          done(false);
         }
       },
-      onCancel: () => {
-        formInstance.value?.resetFields();
+    });
+  };
+  // 删除部门
+  const handleDepartDelete = (nodeData: Depart) => {
+    Modal.confirm({
+      title: '删除部门',
+      content: '该部门下的所有子部门都将被删除，该部门下存在成员时无法删除',
+      onBeforeOk: async () => {
+        if (nodeData.id) {
+          await deleteDepart(nodeData.id);
+          await fetchTree();
+          Message.success('删除部门成功');
+          return true;
+        }
+        return false;
       },
     });
   };

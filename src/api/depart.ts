@@ -18,8 +18,12 @@ export function addDepartByType(data: {
 }
 
 // 获取部门树
-export function getDepartTree() {
-  return axios.get('/depart/getDepartTree');
+export function getDepartTreeById(id?: string) {
+  return axios.get<Depart[]>('/depart/getDepartTreeById', {
+    params: {
+      id: id?.trim(),
+    },
+  });
 }
 
 // 更新部门信息
@@ -28,9 +32,15 @@ export function updateDepart(data: Depart) {
 }
 
 // 调整部门上级
-export function adjustDepartParent(data: {
-  departId: string;
-  parentId: string;
-}) {
-  return axios.post('/depart/adjustDepartParent', data);
+export function adjustDepartment(data: { departId: string; parentId: string }) {
+  return axios.post('/depart/adjustDepartment', data);
+}
+
+// 删除部门
+export function deleteDepart(id: string) {
+  return axios.get('/depart/deleteDepart', {
+    params: {
+      departId: id,
+    },
+  });
 }
