@@ -1,6 +1,5 @@
 import { DEFAULT_LAYOUT } from '../base';
 import { AppRouteRecordRaw } from '../types';
-import overview from '@/views/project/card/index.vue';
 
 const project: AppRouteRecordRaw = {
   path: '/project',

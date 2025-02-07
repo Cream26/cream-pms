@@ -1,43 +1,50 @@
 <template>
-  <a-select v-model="modelRef" :multiple="multiple" placeholder="请选择">
-    <a-option
-      v-for="member in memberList"
-      :key="member._id"
-      :value="member._id"
+  <div class="user-select">
+    <a-select
+      v-model="modelRef"
+      :multiple="multiple"
+      placeholder="请选择"
+      class="w-full"
     >
-      {{ member.name }}
-    </a-option>
-  </a-select>
+      <a-option
+        v-for="member in memberList"
+        :key="member.id"
+        :value="member.id"
+      >
+        {{ member.name }}
+      </a-option>
+    </a-select>
+  </div>
 </template>
 
-<script setup lang="ts">
-  import { getMemberByPage } from '@/api/member';
-  import { computed, ref } from 'vue';
+<script setup lang="ts" name="user-select">
+  import { ref, onMounted } from 'vue';
+  import { getAllUser } from '@/api/user';
 
   const memberList = ref<any[]>([]);
+
+  const modelRef = defineModel<string | string[]>();
+
   const props = defineProps<{
     multiple?: boolean;
-    modelValue: string | string[];
   }>();
-  const emit = defineEmits<{
-    (e: 'update:model-value', d?: string | string[]): void;
-  }>();
-
-  const modelRef = computed({
-    get() {
-      return props.modelValue;
-    },
-    set(val) {
-      emit('update:model-value', val);
-    },
-  });
 
   async function fetchMemberList() {
-    const { data } = await getMemberByPage();
-    memberList.value = data.list;
+    const res = await getAllUser();
+    memberList.value = res.data;
   }
+  onMounted(() => {
+    fetchMemberList();
+  });
 
-  fetchMemberList();
+  // 添加组件名称
+  defineOptions({
+    name: 'UserSelect',
+  });
 </script>
 
-<style lang="less" scoped></style>
+<style lang="less">
+  .user-select {
+    width: 100%;
+  }
+</style>

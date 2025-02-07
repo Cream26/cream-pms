@@ -5,7 +5,7 @@
       <a-col :span="24">
         <a-card class="general-card" title="项目概览">
           <template #extra>
-            <a-button type="primary" @click="projectModalVisible = true">
+            <a-button type="primary" @click="showModel()">
               <template #icon>
                 <icon-plus />
               </template>
@@ -16,14 +16,12 @@
             <a-col :span="24">
               <a-tabs :default-active-tab="1" type="rounded">
                 <a-tab-pane key="1" title="全部">
-                  <!-- <QualityInspection />
-                  <TheService />
-                  <RulesPreset /> -->
                   <CardLayout>
                     <projectCard
                       v-for="item in list"
                       :key="item.id"
                       :project="item"
+                      @edit="handleEdit(item)"
                     />
                   </CardLayout>
                 </a-tab-pane>
@@ -56,52 +54,31 @@
                 </a-tab-pane>
               </a-tabs>
             </a-col>
-            <a-input-search
-              placeholder="请输入"
-              style="width: 240px; position: absolute; top: 60px; right: 20px"
-            />
           </a-row>
         </a-card>
       </a-col>
     </a-row>
   </div>
-  <ProjectFormModal
-    v-model:visible="projectModalVisible"
-    :form="projectForm"
-    @confirm="sendCreateModal"
-  ></ProjectFormModal>
 </template>
 
 <script lang="ts" setup>
-  import ProjectFormModal from '@/components/project-form-modal/index.vue';
+  import useModelFrom from '@/utils/form';
+  import { Project, ProjectDetail } from '@/type/project';
 
   import projectCard from './components/project-card.vue';
   import CardLayout from './components/card-layout.vue';
   import {
     createProject,
-    getProjectPageList,
+    getAllProject,
     updateProjectById,
   } from '@/api/project';
-  import { ref, onBeforeMount, reactive, computed } from 'vue';
+  import { ref, reactive, computed, onMounted } from 'vue';
   import { useUserStore } from '@/store';
+  import { Message } from '@arco-design/web-vue';
 
-  const list = ref<any[]>([]);
-  const projectForm = reactive({
-    id: '',
-    name: '',
-    pmUser: '',
-    feUser: '',
-    beUser: '',
-    envLink: '',
-  });
+  const list = ref<ProjectDetail[]>([]);
 
   const userStore = useUserStore();
-  const projectModalVisible = ref(false);
-
-  async function fetchProjectList() {
-    const { data } = await getProjectPageList();
-    list.value = data.list;
-  }
 
   const listMap = computed<any>(() => {
     const owner: any[] = [];
@@ -109,9 +86,11 @@
     const other: any[] = [];
     list.value.forEach((item) => {
       const { taskList } = item;
-      const ownerPro = [item.pmUser, item.feUser, item.beUser].includes(
-        userStore.id
-      );
+      const ownerPro = [
+        item.projectPMId,
+        item.frontendLeadId,
+        item.backendLeadId,
+      ].includes(userStore.id as string);
       const devPro = taskList.some((task: any) =>
         task.feUserList?.includes(userStore.id)
       );
@@ -131,22 +110,85 @@
       other,
     };
   });
+  const fetchProjectList = async () => {
+    const res = await getAllProject();
+    list.value = res.data;
+  };
 
-  async function sendCreateModal(form: any) {
-    if (form.id) {
-      await updateProjectById(form.id, {
-        ...form,
-      });
-    } else {
-      await createProject({
-        ...form,
-      });
-    }
-    fetchProjectList();
-  }
-
-  onBeforeMount(() => {
-    fetchProjectList();
+  // 弹框显示
+  const showModel = (project?: ProjectDetail) => {
+    const formData = reactive<Project>({
+      name: project?.name || '',
+      departId: project?.departId || '',
+      projectPMId: project?.projectPMId || '',
+      frontendLeadId: project?.frontendLeadId || '',
+      backendLeadId: project?.backendLeadId || '',
+      env: project?.env || '',
+    });
+    const title = project ? '编辑项目' : '新建项目';
+    return useModelFrom({
+      title,
+      modelValue: formData,
+      fields: [
+        {
+          label: '项目名称',
+          prop: 'name',
+          rules: [{ required: true, message: '请输入项目名称' }],
+        },
+        {
+          label: '所属部门',
+          prop: 'departId',
+          type: 'departSelect',
+          rules: [{ required: true, message: '请选择所属部门' }],
+        },
+        {
+          label: '项目PM',
+          prop: 'projectPMId',
+          type: 'userSelect',
+          rules: [{ required: true, message: '请选择项目PM' }],
+        },
+        {
+          label: '前端负责人',
+          prop: 'frontendLeadId',
+          type: 'userSelect',
+          rules: [{ required: true, message: '请选择前端负责人' }],
+        },
+        {
+          label: '后端负责人',
+          prop: 'backendLeadId',
+          type: 'userSelect',
+          rules: [{ required: true, message: '请选择后端负责人' }],
+        },
+        {
+          label: '项目环境配置',
+          prop: 'env',
+          type: 'input',
+          rules: [{ required: false, message: '请输入环境' }],
+        },
+      ],
+      onBeforeValidateOk: async (done, modelValue) => {
+        try {
+          if (project?.id) {
+            await updateProjectById(project.id, modelValue as Project);
+            Message.success('编辑项目成功');
+          } else {
+            await createProject(modelValue as Project);
+            Message.success('创建项目成功');
+          }
+          done(true);
+          await fetchProjectList();
+        } catch (error: any) {
+          Message.error(error.message);
+          done(false);
+        }
+      },
+    });
+  };
+  const handleEdit = (item: ProjectDetail) => {
+    showModel(item);
+  };
+  onMounted(async () => {
+    await fetchProjectList();
   });
 </script>
 

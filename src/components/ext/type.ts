@@ -11,7 +11,8 @@ export type ExtFromType =
   | 'textArea'
   | 'departSelect'
   | 'custom'
-  | 'switch';
+  | 'switch'
+  | 'userSelect';
 
 export type ExtSunFromType = ExtFromType & 'del';
 

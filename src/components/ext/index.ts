@@ -8,6 +8,7 @@ import {
   Switch,
 } from '@arco-design/web-vue';
 import DepartSelect from '@/components/depart-select/index.vue';
+import UserSelect from '@/components/user-select/index.vue';
 import { ExtFromType } from './type';
 import ExtCustom from './costom/ext-costom.vue';
 // 定义组件映射类型
@@ -40,6 +41,8 @@ export default function getRenderComp<T extends ExtFromType | undefined>(
       return Textarea as any;
     case 'departSelect':
       return DepartSelect as any;
+    case 'userSelect':
+      return UserSelect as any;
     case 'custom':
       return ExtCustom as any;
     default:

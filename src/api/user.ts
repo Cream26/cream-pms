@@ -64,3 +64,8 @@ export function deleteUser(id: string) {
 export function updateUser(id: string, data: Omit<User, 'password'>) {
   return axios.post('/user/updateUser', { ...data, id });
 }
+
+// 获取所有用户
+export function getAllUser() {
+  return axios.get('/user/getAllUser');
+}

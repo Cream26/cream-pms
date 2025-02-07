@@ -1,31 +1,42 @@
 import axios from 'axios';
-import qs from 'query-string';
+import { Project } from '@/type/project';
 
-export function createProject(data: {
-  name: string;
-  pmUser: string;
-  feUser?: string;
-  beUser?: string;
-  envLink?: string;
-}) {
-  return axios.post('/project/add', {
+// 创建项目
+export function createProject(data: Project) {
+  return axios.post('/project/createProject', {
     ...data,
   });
 }
 
+// 获取所有项目
+export function getAllProject() {
+  return axios.get('/project/getAllProject');
+}
+
+// 获取项目详情
+export function getProjectById(projectId: string) {
+  return axios.get('/project/getProjectDetailById', {
+    params: {
+      projectId,
+    },
+  });
+}
+
+// 更新项目详情
 export function updateProjectById(
-  id: string,
+  projectId: string,
   data: {
     name: string;
-    pmUser: string;
-    feUser?: string;
-    beUser?: string;
-    envLink?: string;
+    departId: string;
+    projectPMId: string;
+    frontendLeadId: string;
+    backendLeadId: string;
+    env?: string;
   }
 ) {
-  return axios.post('/project/updateById', {
+  return axios.post('/project/updateProjectById', {
+    projectId,
     ...data,
-    id,
   });
 }
 
@@ -39,14 +50,6 @@ export function addCodeStoreById(data: {
 }) {
   return axios.post('/project/addCodeStoreById', {
     ...data,
-  });
-}
-
-export function getProjectById(projectId: string) {
-  return axios.get('/project/getById', {
-    params: {
-      projectId,
-    },
   });
 }
 

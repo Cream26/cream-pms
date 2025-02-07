@@ -1,12 +1,8 @@
 <template>
   <div class="container">
     <Breadcrumb :items="['项目集合', projectDetail.name || '']" />
-    <a-space direction="vertical" :size="16" fill>
+    <a-space direction="vertical" fill>
       <a-card class="general-card" title="项目详情">
-        <template #extra>
-          <a-link>编辑</a-link>
-        </template>
-
         <a-divider style="margin-top: 0" />
         <a-space direction="vertical" fill>
           <a-row>
@@ -18,12 +14,19 @@
             </a-col>
           </a-row>
           <a-row>
-            <a-col :span="2">项目 pm: </a-col>
+            <a-col :span="2">所属部门： </a-col>
             <a-col :span="8">
-              <!-- <a-tag> {{ projectDetail.pmMember?.name }} </a-tag> -->
+              <a-tag v-if="projectDetail?.departInfo" color="#ff9300">
+                {{ projectDetail.departInfo.name }}
+              </a-tag>
+            </a-col>
+          </a-row>
+          <a-row>
+            <a-col :span="2">项目 PM: </a-col>
+            <a-col :span="8">
               <UserTag
-                :id="projectDetail.pmMember?.id"
-                :name="projectDetail.pmMember?.name"
+                :id="projectDetail.projectPMInfo?.id"
+                :name="projectDetail.projectPMInfo?.name"
               ></UserTag>
             </a-col>
           </a-row>
@@ -31,8 +34,8 @@
             <a-col :span="2">前端负责人: </a-col>
             <a-col :span="8">
               <UserTag
-                :id="projectDetail.feMember?.id"
-                :name="projectDetail.feMember?.name"
+                :id="projectDetail.frontendLeadInfo?.id"
+                :name="projectDetail.frontendLeadInfo?.name"
               >
               </UserTag>
             </a-col>
@@ -40,21 +43,22 @@
           <a-row>
             <a-col :span="2">后端负责人: </a-col>
             <a-col :span="8">
-              <!-- <a-tag v-if="projectDetail.beMember">
-                {{ projectDetail.beMember?.name }}
-              </a-tag> -->
               <UserTag
-                :id="projectDetail.beMember?.id"
-                :name="projectDetail.beMember?.name"
+                :id="projectDetail.backendLeadInfo?.id"
+                :name="projectDetail.backendLeadInfo?.name"
               >
               </UserTag>
             </a-col>
+          </a-row>
+          <a-row>
+            <a-col :span="2">项目环境配置： </a-col>
+            <a-col :span="8"> {{ projectDetail.env }} </a-col>
           </a-row>
         </a-space>
       </a-card>
       <a-card class="general-card" title="代码仓库">
         <template #extra>
-          <a-link @click="addCodeStore">添加</a-link>
+          <a-button type="primary" @click="addCodeStore">添加</a-button>
         </template>
         <a-row class="code-store" :gutter="[24, 12]">
           <a-col
@@ -336,7 +340,7 @@
 </template>
 
 <script setup lang="ts">
-  import { getCodeStore } from '@/api/codeStore';
+  import { getCodeStore } from '@/api/code_store';
   import { getMemberByPage } from '@/api/member';
   import { getProjectById, addCodeStoreById } from '@/api/project';
   import {
@@ -346,7 +350,7 @@
     getByProjectId,
   } from '@/api/task';
   import router from '@/router';
-  import { onBeforeMount, ref, reactive } from 'vue';
+  import { onMounted, ref, reactive } from 'vue';
   import { useRoute } from 'vue-router';
 
   const route = useRoute();
@@ -381,10 +385,11 @@
     feUserList: [],
     beUserList: [],
   });
-  async function fetchProjectDetail() {
+  // 获取项目详情信息
+  const fetchProjectDetail = async () => {
     const { data } = await getProjectById(projectId);
     projectDetail.value = data;
-  }
+  };
 
   const sendCreateCodeStoreModal = async () => {
     //
@@ -504,11 +509,9 @@
       },
     });
   }
-  onBeforeMount(() => {
-    fetchCodeStoreDict();
-    fetchProjectDetail();
-    fetchMemberList();
-    fetchTaskList();
+
+  onMounted(async () => {
+    await fetchProjectDetail();
   });
 </script>
 
