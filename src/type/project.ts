@@ -20,3 +20,13 @@ export interface ProjectDetail extends Project {
   departInfo: Depart;
   taskList: any[];
 }
+
+export interface CodeStoreItem {
+  storeName: string;
+  uid: string;
+  storeAddress: string;
+  mainBranch: string;
+  nodeVersion: string;
+  remark?: string;
+  jenkins?: string;
+}

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Project } from '@/type/project';
+import { Project, CodeStoreItem } from '@/type/project';
 
 // 创建项目
 export function createProject(data: Project) {
@@ -42,13 +42,19 @@ export function updateProjectById(
 
 export function addCodeStoreById(data: {
   projectId: string;
-  codeStoreItem: {
-    storeName: string;
-    storeAddress: string;
-    mainBranch: string;
-  };
+  codeStoreItem: CodeStoreItem;
 }) {
   return axios.post('/project/addCodeStoreById', {
+    ...data,
+  });
+}
+
+// 更新项目仓库
+export function updateCodeStoreById(data: {
+  projectId: string;
+  codeStoreItem: CodeStoreItem;
+}) {
+  return axios.post('/project/updateCodeStoreById', {
     ...data,
   });
 }

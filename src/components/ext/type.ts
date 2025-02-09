@@ -12,7 +12,8 @@ export type ExtFromType =
   | 'departSelect'
   | 'custom'
   | 'switch'
-  | 'userSelect';
+  | 'userSelect'
+  | 'datePicker';
 
 export type ExtSunFromType = ExtFromType & 'del';
 

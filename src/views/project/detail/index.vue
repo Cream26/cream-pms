@@ -70,7 +70,6 @@
           >
             <a-space direction="vertical" fill>
               <div>仓库名：{{ store.storeName }}</div>
-              <!-- <div>{{ store.describe }}</div> -->
               <div>主分支：{{ store.mainBranch }}</div>
               <div class="flex-v-center">
                 仓库地址：
@@ -106,13 +105,13 @@
       </a-card>
       <a-card class="general-card" title="任务集合">
         <template #extra>
-          <a-link @click="addRequire">新增</a-link>
+          <a-link @click="showTaskModal">新增</a-link>
         </template>
         <a-divider style="margin-top: 0" />
         <a-spin :loading="false" style="width: 100%">
           <a-table :data="taskList">
             <template #columns>
-              <a-table-column title="#" data-index="">
+              <a-table-column title="序号" data-index="">
                 <template #cell="{ rowIndex }">
                   {{ rowIndex + 1 }}
                 </template>
@@ -188,76 +187,6 @@
     </a-space>
   </div>
   <!-- 项目涉及代码仓库 -->
-  <a-modal
-    v-model:visible="codeStoreModalVisible"
-    :mask-closable="false"
-    title="项目代码仓库"
-    @ok="sendCreateCodeStoreModal"
-  >
-    <a-form :model="codeStoreForm" label-align="left">
-      <a-form-item
-        asterisk-position="end"
-        required
-        field="storeName"
-        label="仓库名称"
-      >
-        <a-select v-model="codeStoreForm.storeName" placeholder="请选择">
-          <a-option
-            v-for="store in codeStoreDictList"
-            :key="store._id"
-            :value="store.name"
-          >
-            {{ store.name }}
-          </a-option>
-        </a-select>
-      </a-form-item>
-      <a-form-item
-        asterisk-position="end"
-        required
-        field="storeAddress"
-        label="仓库地址"
-      >
-        <a-input
-          v-model:model-value="codeStoreForm.storeAddress"
-          placeholder="请输入仓库地址"
-        ></a-input>
-      </a-form-item>
-      <a-form-item
-        asterisk-position="end"
-        required
-        field="mainBranch"
-        label="主分支名"
-      >
-        <a-input
-          v-model:model-value="codeStoreForm.mainBranch"
-          placeholder="请输入主分支"
-        ></a-input>
-      </a-form-item>
-      <a-form-item
-        asterisk-position="end"
-        required
-        field="nodeVersion"
-        label="node 版本"
-      >
-        <a-input
-          v-model:model-value="codeStoreForm.nodeVersion"
-          placeholder="请输入 node 兼容版本"
-        ></a-input>
-      </a-form-item>
-      <a-form-item field="jenkins" label="jenkins 地址">
-        <a-input
-          v-model:model-value="codeStoreForm.jenkins"
-          placeholder="请输入 jenkins 地址"
-        ></a-input>
-      </a-form-item>
-      <a-form-item asterisk-position="end" field="remark" label="项目备注">
-        <a-textarea
-          v-model:model-value="codeStoreForm.remark"
-          placeholder="请输入备注"
-        ></a-textarea>
-      </a-form-item>
-    </a-form>
-  </a-modal>
   <a-modal
     v-model:visible="taskModalVisible"
     :mask-closable="false"
@@ -341,8 +270,11 @@
 
 <script setup lang="ts">
   import { getCodeStore } from '@/api/code_store';
-  import { getMemberByPage } from '@/api/member';
-  import { getProjectById, addCodeStoreById } from '@/api/project';
+  import {
+    getProjectById,
+    addCodeStoreById,
+    updateCodeStoreById,
+  } from '@/api/project';
   import {
     createTask,
     updateTaskById,
@@ -352,14 +284,17 @@
   import router from '@/router';
   import { onMounted, ref, reactive } from 'vue';
   import { useRoute } from 'vue-router';
+  import useModelForm from '@/utils/form';
+  import { CodeStoreItem } from '@/type/project';
+  import { ExtFormFieldItem } from '@/components/ext/type';
+  import { Message } from '@arco-design/web-vue';
+  import UUID from '@/utils/uuid';
 
   const route = useRoute();
   const projectId = route.params.id?.toString();
-  const codeStoreModalVisible = ref(false);
   const taskModalVisible = ref(false);
   const currentTask: any = ref(null);
   const taskList = ref([]);
-  const codeStoreDictList = ref<any[]>([]);
   const projectDetail = ref<any>({});
   const memberList = ref<any[]>([]);
   const taskTypeMap: any = {
@@ -367,14 +302,6 @@
     bug: 'bug',
     other: '其他',
   };
-  const codeStoreForm = reactive<any>({
-    storeName: '',
-    storeAddress: '',
-    mainBranch: '',
-    nodeVersion: '',
-    remark: '',
-    jenkins: '',
-  });
 
   const taskForm = reactive({
     name: '',
@@ -390,28 +317,130 @@
     const { data } = await getProjectById(projectId);
     projectDetail.value = data;
   };
-
-  const sendCreateCodeStoreModal = async () => {
-    //
-    await addCodeStoreById({
-      projectId,
-      codeStoreItem: codeStoreForm,
+  // 代码仓库的创建和编辑
+  const showCodeStoreModal = async (record?: CodeStoreItem) => {
+    const newUid = UUID(6);
+    const { data } = await getCodeStore();
+    const storeList = (data || []).map((store: any) => ({
+      label: store.name || store.storeName,
+      value: store.name || store.storeName,
+    }));
+    const formData = ref<CodeStoreItem>({
+      uid: record?.uid || newUid,
+      storeName: record?.storeName || '',
+      storeAddress: record?.storeAddress || '',
+      mainBranch: record?.mainBranch || '',
+      nodeVersion: record?.nodeVersion || '',
+      remark: record?.remark || '',
+      jenkins: record?.jenkins || '',
     });
-    fetchProjectDetail();
-  };
 
+    const fields = [
+      {
+        label: '仓库名称',
+        prop: 'storeName',
+        type: 'select',
+        rules: [{ required: true, message: '请选择仓库名称' }],
+        fieldCopmProps: {
+          placeholder: '请选择仓库',
+          options: storeList,
+          allowClear: true,
+          allowSearch: true,
+        },
+      },
+      {
+        label: '仓库地址',
+        prop: 'storeAddress',
+        rules: [{ required: true, message: '请输入仓库地址' }],
+        fieldCopmProps: {
+          placeholder: '请输入仓库地址',
+        },
+      },
+      {
+        label: '主分支名',
+        prop: 'mainBranch',
+        rules: [{ required: true, message: '请输入主分支名' }],
+        fieldCopmProps: {
+          placeholder: '请输入主分支',
+        },
+      },
+      {
+        label: 'node 版本',
+        prop: 'nodeVersion',
+        rules: [{ required: true, message: '请输入 node 版本' }],
+        fieldCopmProps: {
+          placeholder: '请输入 node 兼容版本',
+        },
+      },
+      {
+        label: 'jenkins 地址',
+        prop: 'jenkins',
+        fieldCopmProps: {
+          placeholder: '请输入 jenkins 地址',
+        },
+      },
+      {
+        label: '项目备注',
+        prop: 'remark',
+        type: 'textarea',
+        fieldCopmProps: {
+          placeholder: '请输入备注',
+        },
+      },
+    ];
+
+    return useModelForm({
+      title: record ? '编辑代码仓库' : '添加代码仓库',
+      modelValue: formData,
+      fields: fields as ExtFormFieldItem[],
+      onBeforeValidateOk: async (done, modelValue) => {
+        try {
+          if (record?.uid) {
+            await updateCodeStoreById({
+              projectId,
+              codeStoreItem: modelValue as CodeStoreItem,
+            });
+          } else {
+            await addCodeStoreById({
+              projectId,
+              codeStoreItem: modelValue as CodeStoreItem,
+            });
+          }
+          Message.success(record ? '更新成功' : '创建成功');
+          fetchProjectDetail();
+          done(true);
+        } catch (error) {
+          done(false);
+        }
+      },
+    });
+  };
   const addCodeStore = () => {
-    codeStoreModalVisible.value = true;
+    showCodeStoreModal();
+  };
+  const editorCodeStore = (item: CodeStoreItem) => {
+    showCodeStoreModal(item);
   };
 
-  const editorCodeStore = (item: any) => {
-    Object.keys(codeStoreForm).forEach((key: any) => {
-      codeStoreForm[key] = item[key];
+  const showTaskModal = async () => {
+    const taskForm1 = reactive({
+      taskName: '',
+      time: undefined,
     });
-    codeStoreModalVisible.value = true;
+    return useModelForm({
+      title: '测试',
+      modelValue: taskForm1,
+      fields: [
+        {
+          label: '与其时间',
+          prop: 'time',
+          type: 'datePicker',
+        },
+      ],
+    });
   };
 
-  function addRequire() {
+  function addTask() {
     currentTask.value = undefined;
     taskModalVisible.value = true;
     taskForm.name = '';
@@ -432,15 +461,6 @@
     taskForm.feUserList = row.feUserList;
     taskForm.beUserList = row.beUserList;
     taskModalVisible.value = true;
-  }
-
-  async function fetchCodeStoreDict() {
-    const { data } = await getCodeStore();
-    codeStoreDictList.value = data.list;
-  }
-  async function fetchMemberList() {
-    const { data } = await getMemberByPage();
-    memberList.value = data.list;
   }
   async function fetchTaskList() {
     const { data } = await getByProjectId({ projectId });
@@ -519,12 +539,7 @@
   .container {
     padding: 0 20px 20px 20px;
   }
-  .general-card {
-  }
   .code-store {
-    .code-store-item {
-    }
-
     & > .arco-col {
       & > div {
         padding: 20px;
