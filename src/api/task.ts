@@ -1,34 +1,34 @@
 import axios from 'axios';
-import qs from 'query-string';
+import { Task } from '@/type/task';
 
-export function createTask(data: {
-  projectId: string;
-  name: string;
-  type: string;
-  jira: string;
-  expectDate?: string;
-  feUserList?: string[];
-  beUserList?: string[];
-}) {
-  return axios.post('/task/add', {
+// 创建任务
+export function createTask(data: Task) {
+  return axios.post('/task/createTask', {
     ...data,
   });
 }
 
-export function updateTaskById(
-  id: string,
-  data: {
-    name: string;
-    type: string;
-    jira: string;
-    expectDate?: string;
-    feUserList?: string[];
-    beUserList?: string[];
-  }
-) {
-  return axios.post('/task/updateById', {
+// 获取任务列表
+export function getTaskList(projectId: string) {
+  return axios.get('/task/getTaskList', {
+    params: {
+      projectId,
+    },
+  });
+}
+// 更新任务
+export function updateTaskById(data: Task) {
+  return axios.post('/task/updateTaskById', {
     ...data,
-    id,
+  });
+}
+
+// 删除任务
+export function deleteTaskById(id: string) {
+  return axios.get('/task/deleteTaskById', {
+    params: {
+      id,
+    },
   });
 }
 
@@ -60,14 +60,6 @@ export function getByDevId(devId: string) {
   return axios.get('/task/getByDevId', {
     params: {
       devId,
-    },
-  });
-}
-
-export function deleteTaskById(taskId: string) {
-  return axios.get('/task/deleteById', {
-    params: {
-      taskId,
     },
   });
 }

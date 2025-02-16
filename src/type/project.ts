@@ -12,15 +12,6 @@ export interface Project {
   env: string;
 }
 
-export interface ProjectDetail extends Project {
-  projectPMInfo: User;
-  frontendLeadInfo: User;
-  backendLeadInfo: User;
-  ownerInfo: User;
-  departInfo: Depart;
-  taskList: any[];
-}
-
 export interface CodeStoreItem {
   storeName: string;
   uid: string;
@@ -29,4 +20,14 @@ export interface CodeStoreItem {
   nodeVersion: string;
   remark?: string;
   jenkins?: string;
+}
+
+export interface ProjectDetail extends Project {
+  projectPMInfo: User | null;
+  frontendLeadInfo: User | null;
+  backendLeadInfo: User | null;
+  ownerInfo: User | null;
+  departInfo: Depart | null;
+  taskList?: any[];
+  codeStoreList?: CodeStoreItem[];
 }

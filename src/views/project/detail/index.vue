@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <Breadcrumb :items="['项目集合', projectDetail.name || '']" />
+    <Breadcrumb :items="['项目集合', projectDetail?.name || '']" />
     <a-space direction="vertical" fill>
       <a-card class="general-card" title="项目详情">
         <a-divider style="margin-top: 0" />
@@ -9,7 +9,7 @@
             <a-col :span="2">项目名称: </a-col>
             <a-col :span="8">
               <a-tag color="#ff7d00">
-                {{ projectDetail.name }}
+                {{ projectDetail?.name }}
               </a-tag>
             </a-col>
           </a-row>
@@ -25,8 +25,8 @@
             <a-col :span="2">项目 PM: </a-col>
             <a-col :span="8">
               <UserTag
-                :id="projectDetail.projectPMInfo?.id"
-                :name="projectDetail.projectPMInfo?.name"
+                :id="projectDetail?.projectPMInfo?.id"
+                :name="projectDetail?.projectPMInfo?.name"
               ></UserTag>
             </a-col>
           </a-row>
@@ -34,8 +34,8 @@
             <a-col :span="2">前端负责人: </a-col>
             <a-col :span="8">
               <UserTag
-                :id="projectDetail.frontendLeadInfo?.id"
-                :name="projectDetail.frontendLeadInfo?.name"
+                :id="projectDetail?.frontendLeadInfo?.id"
+                :name="projectDetail?.frontendLeadInfo?.name"
               >
               </UserTag>
             </a-col>
@@ -44,29 +44,29 @@
             <a-col :span="2">后端负责人: </a-col>
             <a-col :span="8">
               <UserTag
-                :id="projectDetail.backendLeadInfo?.id"
-                :name="projectDetail.backendLeadInfo?.name"
+                :id="projectDetail?.backendLeadInfo?.id"
+                :name="projectDetail?.backendLeadInfo?.name"
               >
               </UserTag>
             </a-col>
           </a-row>
           <a-row>
             <a-col :span="2">项目环境配置： </a-col>
-            <a-col :span="8"> {{ projectDetail.env }} </a-col>
+            <a-col :span="8"> {{ projectDetail?.env }} </a-col>
           </a-row>
         </a-space>
       </a-card>
       <a-card class="general-card" title="代码仓库">
         <template #extra>
-          <a-button type="primary" @click="addCodeStore">添加</a-button>
+          <a-button type="primary" @click="showCodeStoreModal()">添加</a-button>
         </template>
         <a-row class="code-store" :gutter="[24, 12]">
           <a-col
-            v-for="store in projectDetail.codeStoreList"
-            :key="store.name"
+            v-for="store in projectDetail?.codeStoreList || []"
+            :key="store.uid"
             :span="8"
             class="code-store-item"
-            @click="editorCodeStore(store)"
+            @click="showCodeStoreModal(store)"
           >
             <a-space direction="vertical" fill>
               <div>仓库名：{{ store.storeName }}</div>
@@ -105,44 +105,42 @@
       </a-card>
       <a-card class="general-card" title="任务集合">
         <template #extra>
-          <a-link @click="showTaskModal">新增</a-link>
+          <a-button @click="showTaskModal()">新增</a-button>
         </template>
         <a-divider style="margin-top: 0" />
         <a-spin :loading="false" style="width: 100%">
           <a-table :data="taskList">
             <template #columns>
-              <a-table-column title="序号" data-index="">
+              <a-table-column title="序号">
                 <template #cell="{ rowIndex }">
                   {{ rowIndex + 1 }}
                 </template>
               </a-table-column>
               <a-table-column title="任务类型" data-index="type">
                 <template #cell="{ record }">
-                  {{ taskTypeMap[record.type] }}
+                  {{ getTaskTypeName(record.taskType) }}
                 </template>
               </a-table-column>
-              <a-table-column title="任务名称" data-index="name" />
+              <a-table-column title="任务名称" data-index="taskName" />
               <a-table-column title="状态">
-                <template #cell="{ record }">
-                  <a-tag :color="record.status.color">
-                    {{ record.status.label }}
-                  </a-tag>
+                <template #cell>
+                  <a-tag color="red">未完成</a-tag>
                 </template>
               </a-table-column>
               <a-table-column
                 :ellipsis="true"
                 :width="220"
                 title="jira 地址"
-                data-index="jira"
+                data-index="jiraAddress"
               >
                 <template #cell="{ record }">
                   <a-link
-                    v-if="record.jira"
-                    :href="record.jira"
+                    v-if="record.jiraAddress"
+                    :href="record.jiraAddress"
                     icon
                     target="_blank"
                   >
-                    {{ record.jira }}
+                    {{ record.jiraAddress }}
                   </a-link>
                 </template>
               </a-table-column>
@@ -150,31 +148,30 @@
                 :ellipsis="true"
                 :width="220"
                 title="prd 地址"
-                data-index="prd"
+                data-index="prdAddress"
               >
                 <template #cell="{ record }">
                   <a-link
-                    v-if="record.prd"
-                    :href="record.prd"
+                    v-if="record.prdAddress"
+                    :href="record.prdAddress"
                     icon
                     target="_blank"
                   >
-                    {{ record.prd }}
+                    {{ record.prdAddress }}
                   </a-link>
                 </template>
               </a-table-column>
-              <a-table-column title="创建时间" data-index="updateTime" />
               <a-table-column title="操作" :width="120" align="right">
                 <template #cell="{ record }">
-                  <a-button type="text" @click="goTaskDetail(record._id)">
+                  <a-button type="text" @click="goTaskDetail(record.id)">
                     查看
                   </a-button>
-                  <a-button type="text" @click="updateTask(record)">
+                  <a-button type="text" @click="showTaskModal(record)">
                     编辑
                   </a-button>
                   <a-popconfirm
                     content="确定要删除改任务吗 ?"
-                    @ok="deleteTask(record)"
+                    @ok="deleteTask(record.id)"
                   >
                     <a-button type="text" status="danger"> 删除 </a-button>
                   </a-popconfirm>
@@ -186,86 +183,6 @@
       </a-card>
     </a-space>
   </div>
-  <!-- 项目涉及代码仓库 -->
-  <a-modal
-    v-model:visible="taskModalVisible"
-    :mask-closable="false"
-    :title="currentTask ? '编辑任务' : '创建任务'"
-    @before-ok="sendCreateRequireModal"
-  >
-    <a-form ref="taskFormRef" :model="taskForm" label-align="left">
-      <a-form-item
-        asterisk-position="end"
-        required
-        field="name"
-        label="任务名称"
-      >
-        <a-input v-model="taskForm.name" />
-      </a-form-item>
-      <a-form-item
-        asterisk-position="end"
-        required
-        field="type"
-        label="任务类型"
-      >
-        <a-select v-model="taskForm.type">
-          <a-option value="require">新增需求</a-option>
-          <a-option value="bug">线上bug</a-option>
-          <a-option value="other">其他</a-option>
-        </a-select>
-      </a-form-item>
-      <a-form-item
-        asterisk-position="end"
-        required
-        field="jira"
-        label="jira  地址"
-      >
-        <a-input v-model="taskForm.jira">
-          <template #suffix>
-            <icon-link />
-          </template>
-        </a-input>
-      </a-form-item>
-      <a-form-item
-        asterisk-position="end"
-        required
-        field="prd"
-        label="prd  地址"
-        :ellipsis="true"
-      >
-        <a-input v-model="taskForm.prd">
-          <template #suffix>
-            <icon-link />
-          </template>
-        </a-input>
-      </a-form-item>
-      <a-form-item field="post" label="前端开发">
-        <a-select v-model="taskForm.feUserList" multiple>
-          <a-option
-            v-for="member in memberList"
-            :key="member._id"
-            :value="member._id"
-          >
-            {{ member.name }}
-          </a-option>
-        </a-select>
-      </a-form-item>
-      <a-form-item field="post" label="后端开发">
-        <a-select v-model="taskForm.beUserList" multiple>
-          <a-option
-            v-for="member in memberList"
-            :key="member._id"
-            :value="member._id"
-          >
-            {{ member.name }}
-          </a-option>
-        </a-select>
-      </a-form-item>
-      <a-form-item field="post" label="期望上线日期">
-        <a-date-picker v-model="taskForm.expectDate" style="width: 100%" />
-      </a-form-item>
-    </a-form>
-  </a-modal>
 </template>
 
 <script setup lang="ts">
@@ -277,41 +194,24 @@
   } from '@/api/project';
   import {
     createTask,
+    getTaskList,
     updateTaskById,
     deleteTaskById,
-    getByProjectId,
   } from '@/api/task';
-  import router from '@/router';
   import { onMounted, ref, reactive } from 'vue';
   import { useRoute } from 'vue-router';
   import useModelForm from '@/utils/form';
-  import { CodeStoreItem } from '@/type/project';
+  import { CodeStoreItem, ProjectDetail } from '@/type/project';
   import { ExtFormFieldItem } from '@/components/ext/type';
   import { Message } from '@arco-design/web-vue';
   import UUID from '@/utils/uuid';
+  import { Task } from '@/type/task';
+  import router from '@/router';
 
   const route = useRoute();
   const projectId = route.params.id?.toString();
-  const taskModalVisible = ref(false);
-  const currentTask: any = ref(null);
   const taskList = ref([]);
-  const projectDetail = ref<any>({});
-  const memberList = ref<any[]>([]);
-  const taskTypeMap: any = {
-    require: '需求',
-    bug: 'bug',
-    other: '其他',
-  };
-
-  const taskForm = reactive({
-    name: '',
-    type: '',
-    jira: '',
-    prd: '',
-    expectDate: undefined,
-    feUserList: [],
-    beUserList: [],
-  });
+  const projectDetail = ref<ProjectDetail | null>(null);
   // 获取项目详情信息
   const fetchProjectDetail = async () => {
     const { data } = await getProjectById(projectId);
@@ -415,123 +315,128 @@
       },
     });
   };
-  const addCodeStore = () => {
-    showCodeStoreModal();
-  };
-  const editorCodeStore = (item: CodeStoreItem) => {
-    showCodeStoreModal(item);
+  // 获取任务列表
+  const fetchTaskList = async () => {
+    const { data } = await getTaskList(projectId);
+    taskList.value = data;
   };
 
-  const showTaskModal = async () => {
-    const taskForm1 = reactive({
-      taskName: '',
-      time: undefined,
+  const taskTypeOptions = [
+    { label: '需求', value: 'feature' },
+    { label: 'BUG', value: 'bug' },
+    { label: '其他', value: 'other' },
+  ];
+  const getTaskTypeName = (type: string) => {
+    return taskTypeOptions.find((item) => item.value === type)?.label;
+  };
+
+  const showTaskModal = async (item?: Task) => {
+    const taskForm = reactive<Task>({
+      taskName: item?.taskName || '',
+      taskType: item?.taskType || undefined,
+      jiraAddress: item?.jiraAddress || '',
+      prdAddress: item?.prdAddress || '',
+      frontEndDevelopsIds: item?.frontEndDevelopsIds || [],
+      backEndDevelopsIds: item?.backEndDevelopsIds || [],
+      expectLaunchTime: item?.expectLaunchTime || '',
     });
     return useModelForm({
-      title: '测试',
-      modelValue: taskForm1,
+      title: item?.id ? '编辑任务' : '新增任务',
+      modelValue: taskForm,
       fields: [
         {
-          label: '与其时间',
-          prop: 'time',
+          label: '任务名称',
+          prop: 'taskName',
+          rules: [{ required: true, message: '请输入任务名称' }],
+        },
+        {
+          label: '任务类型',
+          prop: 'taskType',
+          type: 'select',
+          rules: [{ required: true, message: '请选择任务类型' }],
+          fieldCopmProps: {
+            options: taskTypeOptions,
+          },
+        },
+        {
+          label: 'jira 地址',
+          prop: 'jiraAddress',
+          rules: [{ required: true, message: '请输入 jira 地址' }],
+        },
+        {
+          label: 'prd 地址',
+          prop: 'prdAddress',
+          rules: [{ required: true, message: '请输入 prd 地址' }],
+        },
+        {
+          label: '前端开发',
+          prop: 'frontEndDevelopsIds',
+          type: 'userSelect',
+          fieldCopmProps: {
+            placeholder: '请选择前端开发',
+            multiple: true,
+          },
+        },
+        {
+          label: '后端开发',
+          prop: 'backEndDevelopsIds',
+          type: 'userSelect',
+          fieldCopmProps: {
+            placeholder: '请选择后端开发',
+            multiple: true,
+          },
+        },
+        {
+          label: '预期上线时间',
+          prop: 'expectLaunchTime',
           type: 'datePicker',
+          fieldCopmProps: {
+            style: { width: '100%' },
+          },
         },
       ],
+      onBeforeValidateOk: async (done, modelValue) => {
+        try {
+          if (item?.id) {
+            await updateTaskById({
+              id: item.id,
+              ...(modelValue as Task),
+            });
+            Message.success('更新成功');
+          } else {
+            await createTask({
+              projectId,
+              ...(modelValue as Task),
+            });
+            Message.success('创建成功');
+          }
+          fetchTaskList();
+          done(true);
+        } catch (error) {
+          done(false);
+        }
+      },
     });
   };
-
-  function addTask() {
-    currentTask.value = undefined;
-    taskModalVisible.value = true;
-    taskForm.name = '';
-    taskForm.jira = '';
-    taskForm.prd = '';
-    taskForm.type = '';
-    taskForm.expectDate = undefined;
-    taskForm.feUserList = [];
-    taskForm.beUserList = [];
-  }
-  function updateTask(row: any) {
-    currentTask.value = row;
-    taskForm.name = row.name;
-    taskForm.jira = row.jira;
-    taskForm.prd = row.prd;
-    taskForm.type = row.type;
-    taskForm.expectDate = row.expectDate;
-    taskForm.feUserList = row.feUserList;
-    taskForm.beUserList = row.beUserList;
-    taskModalVisible.value = true;
-  }
-  async function fetchTaskList() {
-    const { data } = await getByProjectId({ projectId });
-    taskList.value = data.list.map((item: any) => {
-      const taskInfoList = item.taskInfoList || [];
-      let label = '';
-      let color = '#86909c';
-      if (taskInfoList.length === 0) {
-        label = '未开始';
-        color = '#86909c';
-      } else {
-        const doneList = taskInfoList.filter(
-          (info: any) => info.status === 'done'
-        );
-        if (doneList.length === taskInfoList.length) {
-          label = '开发完成';
-          color = '#00b42a';
-        } else {
-          label = '进行中';
-          color = '#168cff';
-        }
-      }
-      return {
-        status: {
-          color,
-          label,
-        },
-        ...item,
-      };
-    });
-  }
-
-  const taskFormRef = ref<any>();
-  const sendCreateRequireModal = (done: any) => {
-    //
-    taskFormRef.value.validate(async (erro: any) => {
-      if (!erro) {
-        if (currentTask.value) {
-          // eslint-disable-next-line no-underscore-dangle
-          await updateTaskById(currentTask.value._id, {
-            ...taskForm,
-          });
-        } else {
-          await createTask({
-            projectId,
-            ...taskForm,
-          });
-        }
-
-        fetchTaskList();
-        done(true);
-      }
-    });
-  };
-
-  async function deleteTask(row: any) {
-    // eslint-disable-next-line no-underscore-dangle
-    await deleteTaskById(row._id);
+  // 删除任务
+  const deleteTask = async (id: string) => {
+    await deleteTaskById(id);
+    Message.success('删除成功');
     fetchTaskList();
-  }
-  function goTaskDetail(taskId: string) {
+  };
+  // 查看任务详情
+  const goTaskDetail = (taskId: string) => {
     router.push({
       name: 'taskDetail',
       params: {
         id: taskId,
       },
     });
-  }
+  };
 
-  onMounted(async () => {
-    await fetchProjectDetail();
+  onMounted(() => {
+    fetchProjectDetail();
+    fetchTaskList();
   });
 </script>
 
