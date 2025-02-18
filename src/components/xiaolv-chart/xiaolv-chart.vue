@@ -37,7 +37,7 @@
   import { EChartsOption } from 'echarts';
   import dayjs from 'dayjs';
   import { getMemberMap } from '@/api/member';
-  import { getDoneTaskAnalysis } from '@/api/taskInfo';
+  import { getDoneTaskAnalysis } from '@/api/task_info';
   import { ToolTipFormatterParams } from '@/types/echarts';
 
   const props = withDefaults(

@@ -23,16 +23,16 @@ const project: AppRouteRecordRaw = {
         ignoreCache: true,
       },
     },
-    {
-      path: 'list',
-      name: 'projectList',
-      component: () => import('@/views/project/table/index.vue'),
-      meta: {
-        locale: '项目集合',
-        requiresAuth: true,
-        roles: ['*'],
-      },
-    },
+    // {
+    //   path: 'list',
+    //   name: 'projectList',
+    //   component: () => import('@/views/project/table/index.vue'),
+    //   meta: {
+    //     locale: '项目集合',
+    //     requiresAuth: true,
+    //     roles: ['*'],
+    //   },
+    // },
     // {
     //   path: 'task-list',
     //   name: 'projectTaskList',

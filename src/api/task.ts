@@ -32,6 +32,24 @@ export function deleteTaskById(id: string) {
   });
 }
 
+// 获取任务信息通过id
+export function getTaskInfoById(taskId: string) {
+  return axios.get('/task/getTaskInfoById', {
+    params: {
+      taskId,
+    },
+  });
+}
+
+// PM确认
+export function pmConfirmed(taskId: string) {
+  return axios.get('/task/pmConfirmed', {
+    params: {
+      taskId,
+    },
+  });
+}
+
 export function getTaskByPage({ projectId }: { projectId: string }) {
   return axios.get('/task/get', {
     params: {
@@ -61,12 +79,6 @@ export function getByDevId(devId: string) {
     params: {
       devId,
     },
-  });
-}
-
-export function pmConfirmed(taskId: string) {
-  return axios.post('/task/pmConfirmed', {
-    taskId,
   });
 }
 

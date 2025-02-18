@@ -267,7 +267,6 @@
             if (index === i) {
               const startDay = developerMap.value[item.id]?.startDate || today;
               const inputRatio = developerMap.value[item.id]?.inputRatio || 100;
-              debugger;
               const noWorkDaySum = calcWorkday(
                 startDay,
                 implementerInfoSum.value[item.id] / 8 / (inputRatio / 100)

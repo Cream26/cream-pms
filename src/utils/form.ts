@@ -22,11 +22,13 @@ export default function useModelFrom(options: UseModelFromOptions) {
     content() {
       return h(ExtForm, {
         'ref': formRef,
-        'fields': options.fields,
+        'fields': options.fields || [],
         'modelValue': modelValue.value,
-        'onUpdate:modelValue': (val: Record<string, any>) => {
-          modelValue.value = val;
-          options['onUpdate:modelValue']?.(val);
+        'onUpdate:modelValue': (val: Record<string, any> | undefined) => {
+          if (val !== undefined) {
+            modelValue.value = val;
+            options['onUpdate:modelValue']?.(val);
+          }
         },
       });
     },

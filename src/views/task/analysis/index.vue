@@ -44,7 +44,7 @@
   import TaskTimeAnalysis from './components/task-time-analysis.vue';
   import PopularAuthor from './components/popular-author.vue';
   import { ref, onBeforeMount, watch } from 'vue';
-  import { getTaskInfoByTaskId } from '@/api/taskInfo';
+  import { getTaskInfoByTaskId } from '@/api/task_info';
   import { useUserStore } from '@/store';
   import { useRoute } from 'vue-router';
   import { getTaskById } from '@/api/task';

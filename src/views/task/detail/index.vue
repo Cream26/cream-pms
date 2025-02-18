@@ -2,8 +2,8 @@
   <div class="container">
     <Breadcrumb
       :items="[
-        { label: `${projectDetail.name}`, click: goProject },
-        `${taskDetail.name}`,
+        { label: `${projectDetail?.name}`, click: goProject },
+        `${taskDetail?.taskName}`,
       ]"
     />
     <div class="task-container-body">
@@ -14,9 +14,6 @@
               <a-space>
                 任务详情
                 <a-button-group>
-                  <a-button title="编辑" size="mini" type="text">
-                    <icon-edit />
-                  </a-button>
                   <a-button
                     title="分析"
                     size="mini"
@@ -28,31 +25,22 @@
                 </a-button-group>
               </a-space>
             </div>
-            <div class="task-action"> </div>
           </div>
         </template>
         <template #extra>
           <a-space>
-            <a-button>转 交</a-button>
-            <!-- v-if="needPmConfirm" -->
+            <!-- <a-button>转 交</a-button> -->
             <a-button
-              v-if="taskDetail.pmMember?._id === userStore.id"
+              v-if="
+                projectDetail?.projectPMId === userStore.id &&
+                taskInfoList.some((item) => item.confirmed !== true)
+              "
               type="outline"
               @click="pmConfirm"
             >
               PM 确认
             </a-button>
-
             <a-button type="outline" @click="devConfirm"> 开发确认 </a-button>
-
-            <!-- <a-popconfirm
-              content="确认开始开发后，需求会从当前开始计算完成时间，请确认?"
-              position="rt"
-              @ok="startDevClick"
-            >
-              <a-button v-if="!devStarting" type="outline"> 开始开发 </a-button>
-            </a-popconfirm> -->
-
             <a-button
               v-if="devStarting && !devDoneRef"
               type="primary"
@@ -64,15 +52,15 @@
           </a-space>
         </template>
         <a-space>
-          <div> 任务名称: {{ taskDetail.name }} </div>
+          <div> 任务名称: {{ taskDetail?.taskName }} </div>
           <a-divider direction="vertical" />
           <div>
             前端开发:
             <a-space>
               <UserTag
-                v-for="item in taskDetail.feMemberList"
-                :id="item._id"
-                :key="item._id"
+                v-for="item in taskDetail?.frontEndDevelops"
+                :id="item.id"
+                :key="item.id"
                 :name="item.name"
               ></UserTag>
             </a-space>
@@ -81,9 +69,9 @@
           <div>
             后端开发:<a-space>
               <UserTag
-                v-for="item in taskDetail.beMemberList"
-                :id="item._id"
-                :key="item._id"
+                v-for="item in taskDetail?.backEndDevelops"
+                :id="item.id"
+                :key="item.id"
                 :name="item.name"
               ></UserTag>
             </a-space>
@@ -91,15 +79,15 @@
           <a-divider direction="vertical" />
           <div>
             期望上线时间:<a-space>
-              {{ taskDetail.expectDate }}
+              {{ taskDetail?.expectLaunchTime }}
             </a-space>
           </div>
         </a-space>
       </a-card>
-
+      <!-- 任务明细 -->
       <a-card class="general-card task-info-card" title="任务明细">
         <template #extra>
-          <a-link @click="addTaskInfo">新建</a-link>
+          <a-link @click="showTaskDetailModel()">新建</a-link>
         </template>
         <div class="task-info-detail">
           <div
@@ -108,19 +96,18 @@
             class="task-todo-list"
           >
             <div class="task-info-header"> {{ item }} </div>
-            <!-- <div class="task-info-body"> -->
             <VueDraggable
               v-model="listMap[item]"
               class="task-info-body"
               group="task"
               item-key="id"
-              @add="(arg) => taskInfoChange(arg, item as any)"
+              @add="(arg) => taskInfoChange(arg, item as 'todo' | 'doing' | 'done')"
             >
               <template #item="{ element: info }">
                 <div
                   v-if="currentCheckImplementer.includes(info.implementer)"
                   class="task-info-item"
-                  @click="editorTaskInfo(info)"
+                  @click="showTaskDetailModel(info)"
                 >
                   <div class="task-info-item-left">
                     <div class="task-info-name">
@@ -150,7 +137,6 @@
                 </div>
               </template>
             </VueDraggable>
-            <!-- </div> -->
           </div>
           <div class="task-todo-list">
             <div class="task-info-header"> 执行人 </div>
@@ -196,58 +182,6 @@
       </a-card>
     </div>
   </div>
-  <a-modal
-    v-model:visible="taskInfoModalVisible"
-    :mask-closable="false"
-    :title="taskInfoForm.id ? '修改任务明细' : '创建任务明细'"
-    unmount-on-close
-  >
-    <a-form
-      ref="taskInfoFormRef"
-      auto-label-width
-      :model="taskInfoForm"
-      label-align="left"
-    >
-      <a-form-item asterisk-position="end" required field="name" label="名称">
-        <a-input v-model="taskInfoForm.name" placeholder="请输入" />
-      </a-form-item>
-
-      <a-form-item asterisk-position="end" required field="time" label="时间">
-        <a-input-number
-          v-model="taskInfoForm.time"
-          placeholder="请输入"
-          :max="8"
-          :min="0.5"
-          mode="button"
-          :step="0.5"
-          style="width: 100%"
-        >
-          <template #suffix> h </template>
-        </a-input-number>
-      </a-form-item>
-      <a-form-item
-        asterisk-position="end"
-        required
-        field="implementer"
-        label="执行人"
-      >
-        <user-select v-model="taskInfoForm.implementer"> </user-select>
-      </a-form-item>
-      <a-form-item field="desc" label="备注">
-        <a-textarea
-          v-model="taskInfoForm.desc"
-          placeholder="请输入"
-        ></a-textarea>
-      </a-form-item>
-    </a-form>
-
-    <template #footer>
-      <a-space>
-        <a-button status="danger" @click="deleteTaskInfo">删除</a-button>
-        <a-button type="primary" @click="sendCreateTaskInfo">确认</a-button>
-      </a-space>
-    </template>
-  </a-modal>
 
   <a-modal
     v-model:visible="devConfirmVisible"
@@ -280,26 +214,35 @@
 
 <script setup lang="ts">
   import { getProjectById } from '@/api/project';
-  import { devDone, getTaskById, pmConfirmed, devConfirmed } from '@/api/task';
+  import {
+    devDone,
+    pmConfirmed,
+    devConfirmed,
+    getTaskInfoById,
+  } from '@/api/task';
   import {
     createTaskInfo,
-    deleteTaskInfoById,
-    getTaskInfoByTaskId,
+    getTaskDetailList,
     updateTaskInfoById,
-  } from '@/api/taskInfo';
+    updateTaskInfoStatus,
+  } from '@/api/task_info';
   import router from '@/router';
   import { useUserStore } from '@/store';
+  import { TaskDetail } from '@/type/task';
+  import { TaskInfo } from '@/type/task_info';
+  import useModelFrom from '@/utils/form';
   import { Message, Modal } from '@arco-design/web-vue';
   import dayjs from 'dayjs';
-  import { watch, computed, reactive, onBeforeMount, ref } from 'vue';
+  import { watch, computed, reactive, ref, onMounted } from 'vue';
   import { useRoute } from 'vue-router';
   import VueDraggable from 'vuedraggable';
+  import { ProjectDetail } from '@/type/project';
 
   const route = useRoute();
   const userStore = useUserStore();
   const taskId = route.params.id.toString();
   const devConfirmVisible = ref(false);
-  const listMap = reactive<any>({
+  const listMap = reactive<Record<string, TaskInfo[]>>({
     todo: [],
     doing: [],
     done: [],
@@ -311,24 +254,33 @@
 
   const currentCheckImplementer = ref<string[]>([]);
 
-  const taskDetail = ref<any>({});
-  const projectDetail = ref<any>({});
-  const taskInfoModalVisible = ref(false);
-  const taskInfoList = ref<any[]>([]);
+  const taskDetail = ref<TaskDetail>();
+  const projectDetail = ref<ProjectDetail>();
+  const taskInfoList = ref<TaskInfo[]>([]);
   const developerMap = computed(() => {
-    return taskDetail.value.developerMap || {};
+    return taskDetail.value?.developerMap || {};
   });
 
+  // 获取任务信息
+  const fetchTaskInfo = async () => {
+    const { data } = await getTaskInfoById(taskId);
+    taskDetail.value = data;
+  };
+  // 获取任务明细列表
+  const fetchTaskDetailList = async () => {
+    const { data } = await getTaskDetailList(taskId);
+    taskInfoList.value = data;
+  };
+  // 面包屑跳转
   function goProject() {
     router.push({
       name: 'projectDetail',
       params: {
-        // eslint-disable-next-line no-underscore-dangle
-        id: projectDetail.value._id,
+        id: projectDetail.value?.id,
       },
     });
   }
-
+  // 获取项目详情
   watch(taskDetail, async (val) => {
     if (val?.projectId) {
       const { data } = await getProjectById(val?.projectId);
@@ -336,25 +288,33 @@
     }
   });
 
-  const needPmConfirm = computed(() => {
-    return taskInfoList.value.some((item) => !item.confirmed);
-  });
+  // PM确认
+  const pmConfirm = async () => {
+    await pmConfirmed(taskDetail.value?.id as string);
+    await fetchTaskDetailList();
+    Message.success('确认成功');
+  };
+
+  // const needPmConfirm = computed(() => {
+  //   return taskInfoList.value.some((item) => !item.confirmed);
+  // });
 
   const devStarting = computed(() => {
-    const devStartingMap = taskDetail.value.devStartingMap || {};
+    const devStartingMap = taskDetail.value?.developerMap || {};
     return devStartingMap[userStore.id as string];
   });
 
   const devDoneRef = computed(() => {
-    const devDoneMap = taskDetail.value.devDoneMap || {};
+    const devDoneMap = taskDetail.value?.developerMap || {};
     return devDoneMap[userStore.id as string];
   });
 
+  // 获取执行人的一个列表
   const implementerList = computed(() => {
     return taskInfoList.value.reduce(
-      ({ list, map }, item) => {
+      ({ list, map }: { list: any[]; map: Record<string, any> }, item) => {
         const { implementerInfo } = item;
-        if (!map[implementerInfo.id]) {
+        if (implementerInfo && !map[implementerInfo.id]) {
           map[implementerInfo.id] = implementerInfo;
           list.push(implementerInfo);
         }
@@ -363,15 +323,12 @@
       { list: [], map: {} }
     ).list;
   });
-
+  // 监听任务明细列表，从而将其进行分类
   watch(taskInfoList, (val = []) => {
-    const todo: any[] = [];
-    const doing: any[] = [];
-    const done: any[] = [];
-    // if (!currentCheckImplementer.value.length) {
+    const todo: TaskInfo[] = [];
+    const doing: TaskInfo[] = [];
+    const done: TaskInfo[] = [];
     currentCheckImplementer.value = val.map((item) => item.implementer);
-    // }
-    // currentCheckImplementer.value = [userStore.id as string];
 
     val.forEach((item) => {
       if (item.status === 'done') {
@@ -387,114 +344,91 @@
     listMap.done = done;
   });
 
-  const taskInfoForm = reactive({
-    id: '',
-    taskId,
-    name: '',
-    desc: '',
-    time: 1,
-    implementer: '',
-  });
-
-  async function fetchTaskDetail() {
-    const { data } = await getTaskById(taskId);
-    taskDetail.value = data;
-  }
-
-  async function fetchTaskInfoList() {
-    const { data } = await getTaskInfoByTaskId(taskId);
-    taskInfoList.value = data;
-  }
-
-  async function addTaskInfo() {
-    //
-    taskInfoModalVisible.value = true;
-    taskInfoForm.id = '';
-    taskInfoForm.name = '';
-    taskInfoForm.desc = '';
-    taskInfoForm.implementer = `${userStore.id}`;
-  }
-  const currentTaskInfo = ref<any>({});
-  function editorTaskInfo(item: any) {
-    //
-    currentTaskInfo.value = item;
-    // eslint-disable-next-line no-underscore-dangle
-    taskInfoForm.id = item.id || item._id;
-    taskInfoForm.name = item.name;
-    taskInfoForm.time = item.time;
-    taskInfoForm.desc = item.desc;
-    taskInfoForm.implementer = item.implementer;
-    taskInfoModalVisible.value = true;
-  }
-
-  const taskInfoFormRef = ref<any>();
-  function deleteTaskInfo() {
-    taskInfoFormRef.value.validate(async (err: any) => {
-      if (!err) {
-        if (taskInfoForm.id) {
-          await deleteTaskInfoById(taskInfoForm.id);
-          taskInfoModalVisible.value = false;
-          fetchTaskInfoList();
-        }
-      }
+  // 新建/编辑任务明细
+  const showTaskDetailModel = (item?: TaskInfo) => {
+    const taskDetailForm = ref<TaskInfo>({
+      name: item?.name || '',
+      desc: item?.desc || '',
+      time: item?.time || 1,
+      implementer: item?.implementer || (userStore.id as string),
+      status: item?.status || 'todo',
+      taskId,
     });
-  }
-  function sendCreateTaskInfo() {
-    taskInfoFormRef.value.validate(async (err: any) => {
-      if (!err) {
-        if (taskInfoForm.id) {
-          const data: any = {};
-          if (taskInfoForm.time !== currentTaskInfo.value.time) {
-            data.confirmed = false;
-          }
-          await updateTaskInfoById(taskInfoForm.id, {
-            ...taskInfoForm,
-            ...data,
+    return useModelFrom({
+      title: item ? '编辑任务明细' : '新建任务明细',
+      modelValue: taskDetailForm,
+      fields: [
+        {
+          label: '名称',
+          prop: 'name',
+          rules: [{ required: true, message: '请输入名称' }],
+          fieldCopmProps: {
+            placeholder: '请输入名称',
+          },
+        },
+        {
+          label: '时间',
+          prop: 'time',
+          type: 'inputNumber',
+          rules: [{ required: true, message: '请输入时间' }],
+          fieldCopmProps: {
+            placeholder: '请输入时间',
+            min: 0.5,
+            step: 0.5,
+            mode: 'button',
+          },
+        },
+        {
+          label: '执行人',
+          prop: 'implementer',
+          type: 'userSelect',
+          rules: [{ required: true, message: '请选择执行人' }],
+          fieldCopmProps: {
+            disabled: true,
+          },
+        },
+        {
+          label: '备注',
+          prop: 'desc',
+          type: 'textArea',
+          fieldCopmProps: {
+            placeholder: '请输入备注',
+          },
+        },
+      ],
+      onBeforeValidateOk: async (done, modelValue) => {
+        if (item) {
+          await updateTaskInfoById(item.id as string, {
+            ...(modelValue as TaskInfo),
           });
+          Message.success('更新成功');
         } else {
           await createTaskInfo({
-            ...taskInfoForm,
+            ...(modelValue as TaskInfo),
             taskId,
           });
+          Message.success('创建成功');
         }
-        // done(true);
-        taskInfoModalVisible.value = false;
-        fetchTaskInfoList();
-      } else {
-        taskInfoModalVisible.value = true;
-      }
-      // done(false);
-    });
-  }
-  function taskInfoChange(arg: any, status: 'todo' | 'doing' | 'done') {
-    // eslint-disable-next-line no-underscore-dangle
-    const item: any = arg.item.__draggable_context.element;
-    // eslint-disable-next-line no-underscore-dangle
-    updateTaskInfoById(item._id, {
-      status,
-    });
-  }
+        await fetchTaskDetailList();
 
-  async function pmConfirm() {
+        done(true);
+      },
+    });
+  };
+  // 任务明细状态改变
+  const taskInfoChange = async (
+    arg: any,
+    status: 'todo' | 'doing' | 'done'
+  ) => {
     // eslint-disable-next-line no-underscore-dangle
-    await pmConfirmed(taskDetail.value._id);
-    await fetchTaskInfoList();
-    await fetchTaskDetail();
+    await updateTaskInfoStatus(arg.item.__draggable_context.element.id, status);
+  };
 
-    Message.success('确认成功');
-  }
-  // async function startDevClick() {
-  //   // eslint-disable-next-line no-underscore-dangle
-  //   await startDev(taskDetail.value._id);
-  //   await fetchTaskDetail();
-  //   Message.success('确认成功');
-  // }
   async function devConfirmOk() {
     // eslint-disable-next-line no-underscore-dangle
-    await devConfirmed(taskDetail.value._id, {
+    await devConfirmed(taskDetail.value?.id as string, {
       ...devConfirmForm.value,
     });
-    await fetchTaskDetail();
     Message.success('确认成功');
   }
   async function devDoneClick() {
@@ -503,9 +437,7 @@
       content: '开发完成会自动完成所有任务明细，是否确认完成开发?',
       async onOk() {
         // eslint-disable-next-line no-underscore-dangle
-        await devDone(taskDetail.value._id);
-        await fetchTaskDetail();
-        await fetchTaskInfoList();
+        await devDone(taskDetail.value?.id as string);
       },
     });
   }
@@ -527,9 +459,10 @@
       },
     });
   }
-  onBeforeMount(() => {
-    fetchTaskDetail();
-    fetchTaskInfoList();
+
+  onMounted(() => {
+    fetchTaskInfo();
+    fetchTaskDetailList();
   });
 </script>
 

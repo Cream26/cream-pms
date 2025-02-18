@@ -7,6 +7,7 @@ import {
   TreeSelect,
   Switch,
   DatePicker,
+  InputNumber,
 } from '@arco-design/web-vue';
 import DepartSelect from '@/components/depart-select/index.vue';
 import UserSelect from '@/components/user-select/index.vue';
@@ -20,6 +21,7 @@ type ComponentMap = {
   autoComplete: typeof AutoComplete;
   switch: typeof Switch;
   datePicker: typeof DatePicker;
+  inputNumber: typeof InputNumber;
 };
 
 // 使用类型映射让函数返回值类型与传入的type参数关联
@@ -49,6 +51,8 @@ export default function getRenderComp<T extends ExtFromType | undefined>(
       return ExtCustom as any;
     case 'datePicker':
       return DatePicker as any;
+    case 'inputNumber':
+      return InputNumber as any;
     default:
       return Input as any;
   }

@@ -1,3 +1,5 @@
+import { User } from './user';
+
 export interface Task {
   id?: string;
   projectId?: string;
@@ -8,4 +10,9 @@ export interface Task {
   frontEndDevelopsIds: string[];
   backEndDevelopsIds: string[];
   expectLaunchTime: string;
+  developerMap?: any;
+}
+export interface TaskDetail extends Task {
+  frontEndDevelops: User[];
+  backEndDevelops: User[];
 }

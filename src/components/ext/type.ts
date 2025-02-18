@@ -13,7 +13,8 @@ export type ExtFromType =
   | 'custom'
   | 'switch'
   | 'userSelect'
-  | 'datePicker';
+  | 'datePicker'
+  | 'inputNumber';
 
 export type ExtSunFromType = ExtFromType & 'del';
 

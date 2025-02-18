@@ -10,7 +10,7 @@
 
 <script lang="ts" setup>
   import { ref, onBeforeMount } from 'vue';
-  import { getTaskInfoByTaskId } from '@/api/taskInfo';
+  import { getTaskInfoByTaskId } from '@/api/task_info';
   import { useUserStore } from '@/store';
   import { useRoute } from 'vue-router';
   import { getTaskById } from '@/api/task';
