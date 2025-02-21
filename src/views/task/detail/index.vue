@@ -154,8 +154,9 @@
                   <span
                     class="dev-info-block"
                     :class="{
-                      'dev-info-block--confirmed':
-                        developerMap[member.id]?.confirmed,
+                      'dev-info-block--confirmed': taskInfoList.every(
+                        (item) => item.confirmed === true
+                      ),
                     }"
                   >
                     (
@@ -424,11 +425,12 @@
     await updateTaskInfoStatus(arg.item.__draggable_context.element.id, status);
   };
 
+  // 开发确认
   async function devConfirmOk() {
-    // eslint-disable-next-line no-underscore-dangle
     await devConfirmed(taskDetail.value?.id as string, {
       ...devConfirmForm.value,
     });
+    await fetchTaskInfo();
     Message.success('确认成功');
   }
   async function devDoneClick() {

@@ -3,8 +3,8 @@
   <div class="container">
     <Breadcrumb
       :items="[
-        { label: `${projectDetail.name}`, click: goProject },
-        taskDetail?.name || '',
+        { label: `${projectDetail?.name}`, click: goProject },
+        `${taskDetail?.taskName}`,
       ]"
     />
     <a-space direction="vertical" :size="12" fill>
@@ -30,9 +30,6 @@
             </a-grid-item>
           </a-grid>
         </div>
-        <div>
-          <!-- <ContentPeriodAnalysis /> -->
-        </div>
       </a-space>
     </a-space>
   </div>
@@ -40,32 +37,31 @@
 
 <script lang="ts" setup>
   import PublicOpinion from './components/public-opinion.vue';
-  import ContentPeriodAnalysis from './components/content-period-analysis.vue';
   import TaskTimeAnalysis from './components/task-time-analysis.vue';
   import PopularAuthor from './components/popular-author.vue';
-  import { ref, onBeforeMount, watch } from 'vue';
-  import { getTaskInfoByTaskId } from '@/api/task_info';
-  import { useUserStore } from '@/store';
+  import { ref, watch, onMounted } from 'vue';
   import { useRoute } from 'vue-router';
-  import { getTaskById } from '@/api/task';
   import { getProjectById } from '@/api/project';
   import router from '@/router';
+  import { getTaskInfoById } from '@/api/task';
+  import { getTaskDetailList } from '@/api/task_info';
 
   const route = useRoute();
   const taskDetail = ref<any>({});
-  const userStore = useUserStore();
   const taskId = route.params.id.toString();
   const taskInfoList = ref<any[]>([]);
-
-  async function fetchTaskInfoList() {
-    const { data } = await getTaskInfoByTaskId(taskId);
-    taskInfoList.value = data;
-  }
-  async function fetchTaskDetail() {
-    const { data } = await getTaskById(taskId);
-    taskDetail.value = data;
-  }
   const projectDetail = ref<any>({});
+
+  // 获取任务信息
+  const fetchTaskInfo = async () => {
+    const { data } = await getTaskInfoById(taskId);
+    taskDetail.value = data;
+  };
+  // 获取任务明细列表
+  const fetchTaskDetailList = async () => {
+    const { data } = await getTaskDetailList(taskId);
+    taskInfoList.value = data;
+  };
 
   function goProject() {
     router.push({
@@ -83,9 +79,9 @@
     }
   });
 
-  onBeforeMount(() => {
-    fetchTaskInfoList();
-    fetchTaskDetail();
+  onMounted(() => {
+    fetchTaskInfo();
+    fetchTaskDetailList();
   });
 </script>
 

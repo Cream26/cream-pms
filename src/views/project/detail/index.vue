@@ -123,8 +123,10 @@
               </a-table-column>
               <a-table-column title="任务名称" data-index="taskName" />
               <a-table-column title="状态">
-                <template #cell>
-                  <a-tag color="red">未完成</a-tag>
+                <template #cell="{ record }">
+                  <a-tag :color="record.status.color">
+                    {{ record.status.label }}
+                  </a-tag>
                 </template>
               </a-table-column>
               <a-table-column
@@ -210,7 +212,7 @@
 
   const route = useRoute();
   const projectId = route.params.id?.toString();
-  const taskList = ref([]);
+  const taskList = ref<Task[]>([]);
   const projectDetail = ref<ProjectDetail | null>(null);
   // 获取项目详情信息
   const fetchProjectDetail = async () => {
@@ -318,7 +320,33 @@
   // 获取任务列表
   const fetchTaskList = async () => {
     const { data } = await getTaskList(projectId);
-    taskList.value = data;
+    taskList.value = data.map((item: any) => {
+      const taskInfoList = item.taskInfoList || [];
+      let label = '';
+      let color = '#86909c';
+      if (taskInfoList.length === 0) {
+        label = '未开始';
+        color = '#86909c';
+      } else {
+        const doneList = taskInfoList.filter(
+          (info: any) => info.status === 'done'
+        );
+        if (doneList.length === taskInfoList.length) {
+          label = '开发完成';
+          color = '#00b42a';
+        } else {
+          label = '进行中';
+          color = '#168cff';
+        }
+      }
+      return {
+        status: {
+          label,
+          color,
+        },
+        ...item,
+      };
+    });
   };
 
   const taskTypeOptions = [

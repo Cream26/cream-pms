@@ -1,3 +1,4 @@
+import { TaskInfo } from './task_info';
 import { User } from './user';
 
 export interface Task {
@@ -11,6 +12,7 @@ export interface Task {
   backEndDevelopsIds: string[];
   expectLaunchTime: string;
   developerMap?: any;
+  taskInfoList?: TaskInfo[];
 }
 export interface TaskDetail extends Task {
   frontEndDevelops: User[];

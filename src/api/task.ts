@@ -50,6 +50,20 @@ export function pmConfirmed(taskId: string) {
   });
 }
 
+// 开发确认
+export function devConfirmed(
+  taskId: string,
+  data: {
+    startDate: number;
+    inputRatio: number;
+  }
+) {
+  return axios.post('/task/devConfirmed', {
+    taskId,
+    ...data,
+  });
+}
+
 export function getTaskByPage({ projectId }: { projectId: string }) {
   return axios.get('/task/get', {
     params: {
@@ -79,19 +93,6 @@ export function getByDevId(devId: string) {
     params: {
       devId,
     },
-  });
-}
-
-export function devConfirmed(
-  taskId: string,
-  data: {
-    startDate: number;
-    inputRatio: number;
-  }
-) {
-  return axios.post('/task/devConfirm', {
-    taskId,
-    ...data,
   });
 }
 

@@ -91,7 +91,7 @@
         item.frontendLeadId,
         item.backendLeadId,
       ].includes(userStore.id as string);
-      const devPro = taskList.some((task: any) =>
+      const devPro = taskList?.some((task: any) =>
         task.feUserList?.includes(userStore.id)
       );
       if (ownerPro) {

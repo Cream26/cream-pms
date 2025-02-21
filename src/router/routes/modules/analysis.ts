@@ -19,7 +19,7 @@ const USER: AppRouteRecordRaw = {
       meta: {
         locale: '效率统计',
         requiresAuth: true,
-        roles: ['*'],
+        roles: ['admin'],
       },
     },
     {
@@ -29,7 +29,7 @@ const USER: AppRouteRecordRaw = {
       meta: {
         locale: '代办统计',
         requiresAuth: true,
-        roles: ['*'],
+        roles: ['admin'],
       },
     },
   ],
