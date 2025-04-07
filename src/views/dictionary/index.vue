@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <Breadcrumb :items="['menu.list', 'menu.list.searchTable']" />
+    <Breadcrumb :items="['数据字典', '代码仓库']" />
     <a-card class="general-card" title="代码仓库">
       <template #extra>
         <a-button type="primary" @click="handleAdd">新增</a-button>

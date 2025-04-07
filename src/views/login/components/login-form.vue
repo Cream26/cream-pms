@@ -16,10 +16,7 @@
         :validate-trigger="['change', 'blur']"
         hide-label
       >
-        <a-input
-          v-model="userInfo.username"
-          :placeholder="$t('login.form.userName.placeholder')"
-        >
+        <a-input v-model="userInfo.username" placeholder="账号">
           <template #prefix>
             <icon-user />
           </template>
@@ -33,7 +30,7 @@
       >
         <a-input-password
           v-model="userInfo.password"
-          :placeholder="$t('login.form.password.placeholder')"
+          placeholder="密码"
           allow-clear
         >
           <template #prefix>
@@ -54,9 +51,6 @@
         </div>
         <a-button type="primary" html-type="submit" long :loading="loading">
           {{ $t('login.form.login') }}
-        </a-button>
-        <a-button type="text" long class="login-form-register-btn">
-          {{ $t('login.form.register') }}
         </a-button>
       </a-space>
     </a-form>
@@ -82,12 +76,12 @@
 
   const loginConfig = useStorage('login-config', {
     rememberPassword: true,
-    username: 'admin', // 演示默认值
-    password: 'admin', // demo default value
+    username: '', // 演示默认值
+    password: '', // demo default value
   });
   const userInfo = reactive({
-    username: loginConfig.value.username,
-    password: loginConfig.value.password,
+    username: '',
+    password: '',
   });
 
   const handleSubmit = async ({
